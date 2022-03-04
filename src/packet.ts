@@ -44,17 +44,11 @@ export class PacketReader {
         return result
     }
 
-    readArrayComplex(readFunctions: {
-        [name: string]: () => unknown
-     }): any[] {
+    readArrayComplex<T>(readObject: (packet: PacketReader) => T): T[] {
         const count = this.readVarInt()
-        const result: any[] = []
+        const result: T[] = []
         for (let i = 0; i < count; i++) {
-            const obj: any = {}
-            Object.keys(readFunctions).forEach(key => {
-                obj[key] = readFunctions[key]()
-            })
-            result.push(obj)
+            result.push(readObject(this))
         }
         return result
     }
@@ -213,6 +207,12 @@ export class PacketWriter {
         array.forEach(value => {
             writeFunction(value)
         })
+        return this
+    }
+
+    writeArrayComplex<T>(array: T[], writeObject: (packet: PacketWriter, value: T) => void) {
+        this.writeVarInt(array.length)
+        array.forEach(value => writeObject(this, value))
         return this
     }
 
