@@ -31,6 +31,10 @@ export class PacketReader {
         return this.buffer.slice(this.offset, this.offset += length)
     }
 
+    readRest() {
+        return this.read(this.buffer.length - this.offset)
+    }
+
     readArray<T>(readFunction: () => T): T[] {
         const count = this.readVarInt()
         const result: T[] = []
