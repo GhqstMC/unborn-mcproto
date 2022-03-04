@@ -1,30 +1,24 @@
-# Minecraft Protocol
+# Unborn Minecraft Protocol
 
-[![npm](https://img.shields.io/npm/v/mcproto.svg)](https://www.npmjs.com/package/mcproto)
-[![downloads](https://img.shields.io/npm/dm/mcproto.svg)](https://www.npmjs.com/package/mcproto)
-[![license](https://img.shields.io/npm/l/mcproto.svg)](https://github.com/janispritzkau/mcproto/blob/master/LICENSE)
+[![npm](https://img.shields.io/npm/v/unborn-mcproto.svg)](https://www.npmjs.com/package/unborn-mcproto)
+[![downloads](https://img.shields.io/npm/dm/unborn-mcproto.svg)](https://www.npmjs.com/package/unborn-mcproto)
+[![license](https://img.shields.io/npm/l/unborn-mcproto.svg)](https://github.com/GhqstMC/unborn-mcproto/blob/master/LICENSE)
 
-`mcproto` is a small and lightweight implementation of the Minecraft protocol.
-It aims to be a low-level library that provides the foundations
-for building clients, servers, proxies and higher level abstractions.
-This implementation only decodes packets that are related to the connection state
-or login procedure. That makes it mostly version-independent since those
-packets usually don't change from version to version.
+`unborn-mcproto` builds on `mcproto`, a small and lightweight implementation of the Minecraft protocol. It is designed for Hypixel 1.8.9 proxies and features PrismarineJS tools and functional niceties for deserializing and serializing packets in a proxy context with tight integration.
+
+If you're looking for a Hypixel proxy, I highly recommend [Lilith](https://discord.gg/lilith).
 
 ## Features
 
-- Compression
-- Encryption for client and server
-- Utility classes for writing / reading packets.
-- Asynchronous `nextPacket` method for reading the next packet _(with id)_.
-- VarLong and 64 bit data types using [BigInts](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt)
+- Prismarine NBT
+- Tools for reading rest buffers, optional properties, simple arrays, and arrays of objects in a functional way
 
 ## Examples
 
 ### Server list ping
 
 ```js
-const { Client, PacketWriter, State } = require("mcproto")
+const { Client, PacketWriter, State } = require("unborn-mcproto")
 
 const host = "play.hivemc.com", port = 25565
 
@@ -45,7 +39,7 @@ client.end()
 ### Client
 
 ```js
-const { Client, PacketWriter, State } = require("mcproto")
+const { Client, PacketWriter, State } = require("unborn-mcproto")
 
 const host = "localhost", port = 25565, username = "Notch"
 
@@ -126,9 +120,12 @@ client.on("packet", packet => {
 For details about packets and general information about the protocol,
 https://wiki.vg/Protocol is a great reference.
 
-## Related projects
+## Other Projects
 
-- [mc-chat-format](https://github.com/janispritzkau/mc-chat-format). Converts
+- [Lilith](https://discord.gg/lilith). An easy to use Hypixel proxy for the general public that will soon use `unborn-mcproto`
+
+- [prismarine-proxy](https://github.com/PrismarineJS/prismarine-proxy). A higher level, generalized alternative library. Provides Protodef for much easier packet parsing.
+- [minecraft-proxy-handler](https://github.com/u9g/minecraft-proxy-handler). An alternative to prismarine-proxy with less documentation.
+- [prismarine-chat](https://github.com/PrismarineJS/prismarine-chat). A parser for a minecraft chat message
+- [prismarine-nbt](https://github.com/PrismarineJS/prismarine-nbt). Converts
   chat components into raw / ansi formatted text.
-- [mc-status](https://github.com/janispritzkau/mc-server-status) (Server status checker)
-- [mcrevproxy](https://gitlab.com/janispritzkau/mcrevproxy) (Reverse proxy)
