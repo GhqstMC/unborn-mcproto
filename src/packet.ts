@@ -31,6 +31,15 @@ export class PacketReader {
         return this.buffer.slice(this.offset, this.offset += length)
     }
 
+    readArray<T>(readFunction: () => T): T[] {
+        const count = this.readVarInt()
+        const result: T[] = []
+        for (let i = 0; i < count; i++) {
+            result.push(readFunction())
+        }
+        return result
+    }
+
     readString() {
         return this.read(this.readVarInt()).toString()
     }
@@ -177,6 +186,14 @@ export class PacketWriter {
         this.extend(buffer.length)
         buffer.copy(this.buffer, this.offset)
         this.offset += buffer.length
+        return this
+    }
+
+    writeArray<T>(array: T[], writeFunction: (input: T) => PacketWriter) {
+        this.writeVarInt(array.length)
+        array.forEach(value => {
+            writeFunction(value)
+        })
         return this
     }
 
