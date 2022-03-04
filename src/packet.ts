@@ -113,6 +113,16 @@ export class PacketReader {
         this.offset += tag.length
         return tag
     }
+
+    readOptionalNBT(options?: nbt.DecodeOptions): false | nbt.DecodeResult {
+        if (this.buffer.readInt8(this.offset) === 0) {
+            this.offset++
+            return false
+        }
+        const tag = nbt.decode(this.buffer.slice(this.offset), options)
+        this.offset += tag.length
+        return tag
+    }
 }
 
 
@@ -232,13 +242,18 @@ export class PacketWriter {
         )
     }
 
-    writeUUID(uuid: string): PacketWriter {
+    writeUUID(uuid: string) {
         const buf = parse(uuid)
         buf.copy(this.buffer, (this.offset += 16) - 16)
         return this
     }
 
     writeNBT(name: string | null, tag: nbt.Tag | null) {
+        return this.write(nbt.encode(name, tag))
+    }
+
+    writeOptionalNBT(name: string | null, tag: nbt.Tag | null, defined: boolean = true) {
+        if (!defined) return this.writeInt8(0)
         return this.write(nbt.encode(name, tag))
     }
 
