@@ -77,7 +77,7 @@ export class Reader extends Transform {
                     }
                 }
             } catch (error) {
-                return this.destroy(error)
+                return this.destroy(error as Error | undefined)
             }
             offset += length
             await Promise.resolve()
