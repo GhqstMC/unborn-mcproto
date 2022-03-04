@@ -1,5 +1,6 @@
 import { writeVarInt, decodeVarInt, decodeVarLong, writeVarLong } from "./varint"
 import * as nbt from "nbt-ts"
+import { stringify, parse } from 'uuid-1345'
 
 export type Packet = PacketReader | PacketWriter | Buffer
 
@@ -101,6 +102,10 @@ export class PacketReader {
                 y: Number(value & 0xfffn) << 20 >> 20,
                 z: Number((value >> 12n) & 0x3ffffffn) << 6 >> 6
             }
+    }
+
+    readUUID(): string {
+        return stringify(this.buffer.slice(this.offset, (this.offset += 16)))
     }
 
     readNBT(options?: nbt.DecodeOptions) {
@@ -225,6 +230,12 @@ export class PacketWriter {
             ? (BigInt(x & 0x3ffffff) << 38n) | (BigInt(y! & 0xfff) << 26n) | BigInt(z! & 0x3ffffff)
             : (BigInt(x & 0x3ffffff) << 38n) | (BigInt(z! & 0x3ffffff) << 12n) | BigInt(y! & 0xfff)
         )
+    }
+
+    writeUUID(uuid: string): PacketWriter {
+        const buf = parse(uuid)
+        buf.copy(this.buffer, (this.offset += 16) - 16)
+        return this
     }
 
     writeNBT(name: string | null, tag: nbt.Tag | null) {
