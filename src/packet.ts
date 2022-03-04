@@ -1,6 +1,11 @@
 import { writeVarInt, decodeVarInt, decodeVarLong, writeVarLong } from "./varint"
 import * as nbt from "nbt-ts"
-import { stringify, parse } from 'uuid-1345'
+import { stringify, parse } from "uuid-1345"
+import * as zlib from "zlib"
+import { promisify } from "util"
+
+const gzip = promisify(zlib.gzip)
+const gunzip = promisify(zlib.gunzip)
 
 export type Packet = PacketReader | PacketWriter | Buffer
 
@@ -121,6 +126,34 @@ export class PacketReader {
         }
         const tag = nbt.decode(this.buffer.slice(this.offset), options)
         this.offset += tag.length
+        return tag
+    }
+
+    readCompressedNBT(options?: nbt.DecodeOptions): null | nbt.DecodeResult {
+        const length = this.readInt16()
+        if (length === -1) return null
+
+        const compressedNbt = this.buffer.slice(this.offset, this.offset + length)
+
+        this.offset += length
+
+        const nbtBuffer = zlib.gunzipSync(compressedNbt)
+
+        const tag = nbt.decode(nbtBuffer, options)
+        return tag
+    }
+
+    async readCompressedNBTAsync(options?: nbt.DecodeOptions): Promise<null | nbt.DecodeResult> {
+        const length = this.readInt16()
+        if (length === -1) return null
+
+        const compressedNbt = this.buffer.slice(this.offset, this.offset + length)
+
+        this.offset += length
+
+        const nbtBuffer = await gunzip(compressedNbt)
+
+        const tag = nbt.decode(nbtBuffer, options)
         return tag
     }
 }
@@ -255,6 +288,32 @@ export class PacketWriter {
     writeOptionalNBT(name: string | null, tag: nbt.Tag | null, defined: boolean = true) {
         if (!defined) return this.writeInt8(0)
         return this.write(nbt.encode(name, tag))
+    }
+
+    writeCompressedNBT(name: string | null, tag: nbt.Tag | null, defined: boolean = true) {
+        if (!defined) return this.writeInt16(-1)
+
+        const buf = nbt.encode(name, tag)
+
+        const compressedNbt = zlib.gzipSync(buf)
+        compressedNbt.writeUInt8(0, 9)
+
+        this.writeInt16(compressedNbt.length)
+        compressedNbt.copy(this.buffer, (this.offset += compressedNbt.length) - compressedNbt.length)
+        return this
+    }
+
+    async writeCompressedNBTAsync(name: string | null, tag: nbt.Tag | null, defined: boolean = true) {
+        if (!defined) return this.writeInt16(-1)
+
+        const buf = nbt.encode(name, tag)
+
+        const compressedNbt = await gzip(buf)
+        compressedNbt.writeUInt8(0, 9)
+
+        this.writeInt16(compressedNbt.length)
+        compressedNbt.copy(this.buffer, (this.offset += compressedNbt.length) - compressedNbt.length)
+        return this
     }
 
     encode() {
