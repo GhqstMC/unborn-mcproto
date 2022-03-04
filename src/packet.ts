@@ -1,5 +1,5 @@
 import { writeVarInt, decodeVarInt, decodeVarLong, writeVarLong } from "./varint"
-import * as nbt from "nbt-ts"
+import * as nbt from "prismarine-nbt"
 import { stringify, parse } from "uuid-1345"
 import * as zlib from "zlib"
 import { promisify } from "util"
@@ -139,23 +139,13 @@ export class PacketReader {
         return stringify(this.buffer.slice(this.offset, (this.offset += 16)))
     }
 
-    readNBT(options?: nbt.DecodeOptions) {
-        const tag = nbt.decode(this.buffer.slice(this.offset), options)
-        this.offset += tag.length
-        return tag
+    readNBT() {
+        const data = nbt.proto.read(this.buffer, this.offset, 'nbt')
+        this.offset += nbt.proto.sizeOf(data, 'nbt')
+        return data
     }
 
-    readOptionalNBT(options?: nbt.DecodeOptions): false | nbt.DecodeResult {
-        if (this.buffer.readInt8(this.offset) === 0) {
-            this.offset++
-            return false
-        }
-        const tag = nbt.decode(this.buffer.slice(this.offset), options)
-        this.offset += tag.length
-        return tag
-    }
-
-    readCompressedNBT(options?: nbt.DecodeOptions): null | nbt.DecodeResult {
+    readCompressedNBT() {
         const length = this.readInt16()
         if (length === -1) return null
 
@@ -165,11 +155,10 @@ export class PacketReader {
 
         const nbtBuffer = zlib.gunzipSync(compressedNbt)
 
-        const tag = nbt.decode(nbtBuffer, options)
-        return tag
+        return nbt.parseUncompressed(nbtBuffer)
     }
 
-    async readCompressedNBTAsync(options?: nbt.DecodeOptions): Promise<null | nbt.DecodeResult> {
+    async readCompressedNBTAsync() {
         const length = this.readInt16()
         if (length === -1) return null
 
@@ -179,8 +168,7 @@ export class PacketReader {
 
         const nbtBuffer = await gunzip(compressedNbt)
 
-        const tag = nbt.decode(nbtBuffer, options)
-        return tag
+        return nbt.parseUncompressed(nbtBuffer)
     }
 }
 
@@ -329,19 +317,14 @@ export class PacketWriter {
         return this
     }
 
-    writeNBT(name: string | null, tag: nbt.Tag | null) {
-        return this.write(nbt.encode(name, tag))
+    writeNBT(value: nbt.NBT, format?: nbt.NBTFormat) {
+        return this.write(nbt.writeUncompressed(value, format))
     }
 
-    writeOptionalNBT(name: string | null, tag: nbt.Tag | null, defined: boolean = true) {
-        if (!defined) return this.writeInt8(0)
-        return this.write(nbt.encode(name, tag))
-    }
-
-    writeCompressedNBT(name: string | null, tag: nbt.Tag | null, defined: boolean = true) {
+    writeCompressedNBT(value: nbt.NBT, format?: nbt.NBTFormat, defined: boolean = true) {
         if (!defined) return this.writeInt16(-1)
 
-        const buf = nbt.encode(name, tag)
+        const buf = nbt.writeUncompressed(value, format)
 
         const compressedNbt = zlib.gzipSync(buf)
         compressedNbt.writeUInt8(0, 9)
@@ -351,10 +334,10 @@ export class PacketWriter {
         return this
     }
 
-    async writeCompressedNBTAsync(name: string | null, tag: nbt.Tag | null, defined: boolean = true) {
+    async writeCompressedNBTAsync(value: nbt.NBT, format?: nbt.NBTFormat, defined: boolean = true) {
         if (!defined) return this.writeInt16(-1)
 
-        const buf = nbt.encode(name, tag)
+        const buf = nbt.writeUncompressed(value, format)
 
         const compressedNbt = await gzip(buf)
         compressedNbt.writeUInt8(0, 9)
