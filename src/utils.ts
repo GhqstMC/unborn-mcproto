@@ -1,23 +1,36 @@
-import fetch from "node-fetch"
+import { fetch, FetchResultTypes, FetchMethods } from '@sapphire/fetch';
 import * as querystring from "querystring"
 
 export async function joinSession(accessToken: string, selectedProfile: string, serverId: string) {
-    const response = await fetch("https://sessionserver.mojang.com/session/minecraft/join", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            accessToken, selectedProfile, serverId
-        })
-    })
-    return response.ok
+    try {
+        const responseData = await fetch(
+            'https://sessionserver.mojang.com/session/minecraft/join',
+            {
+                method: FetchMethods.Post,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    accessToken, selectedProfile, serverId
+                })
+            },
+            FetchResultTypes.JSON
+        )
+        return true
+    } catch(e) {
+        return false
+    }
 }
 
 export async function hasJoinedSession(username: string, serverId: string, ip?: string) {
-    const response = await fetch("https://sessionserver.mojang.com/session/minecraft/hasJoined?"
-    + querystring.stringify({ username, serverId }))
-    return response.ok
+    try {
+        const data = await fetch("https://sessionserver.mojang.com/session/minecraft/hasJoined?"
+        + querystring.stringify({ username, serverId }), FetchResultTypes.JSON)
+        return true
+    } catch(e) {
+        return false
+    }
+    
 }
 
 export function mcPublicKeyToPem(buffer: Buffer) {
