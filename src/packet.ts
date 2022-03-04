@@ -206,9 +206,9 @@ export class PacketWriter {
         return this
     }
 
-    writeOptional<T>(value: T | undefined, writeFunction: (input: T) => PacketWriter, defined: boolean) {
-        this.writeBool(defined)
-        if (defined && value !== undefined) {
+    writeOptional<T>(value: T | undefined, writeFunction: (input: T) => PacketWriter) {
+        this.writeBool(value !== undefined)
+        if (value !== undefined) {
             writeFunction(value)
         }
         return this
@@ -222,7 +222,7 @@ export class PacketWriter {
         return this
     }
 
-    writeArrayComplex<T>(array: T[], writeObject: (packet: PacketWriter, value: T) => void) {
+    writeArrayComplex<T>(array: T[], writeObject: (writer: PacketWriter, value: T) => void) {
         this.writeVarInt(array.length)
         array.forEach(value => writeObject(this, value))
         return this
