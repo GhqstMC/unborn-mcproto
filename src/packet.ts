@@ -35,6 +35,10 @@ export class PacketReader {
         return this.read(this.buffer.length - this.offset)
     }
 
+    readOptional<T>(readFunction: () => T): T | null {
+        return this.readBool() ? readFunction() : null
+    }
+
     readArray<T>(readFunction: () => T): T[] {
         const count = this.readVarInt()
         const result: T[] = []
@@ -199,6 +203,14 @@ export class PacketWriter {
         this.extend(buffer.length)
         buffer.copy(this.buffer, this.offset)
         this.offset += buffer.length
+        return this
+    }
+
+    writeOptional<T>(value: T | null, writeFunction: (input: T) => PacketWriter, included: boolean) {
+        this.writeBool(included)
+        if (included && value !== null) {
+            writeFunction(value)
+        }
         return this
     }
 
