@@ -40,6 +40,21 @@ export class PacketReader {
         return result
     }
 
+    readArrayComplex(readFunctions: {
+        [name: string]: () => unknown
+     }): any[] {
+        const count = this.readVarInt()
+        const result: any[] = []
+        for (let i = 0; i < count; i++) {
+            const obj: any = {}
+            Object.keys(readFunctions).forEach(key => {
+                obj[key] = readFunctions[key]()
+            })
+            result.push(obj)
+        }
+        return result
+    }
+
     readString() {
         return this.read(this.readVarInt()).toString()
     }
