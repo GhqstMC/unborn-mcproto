@@ -41,18 +41,18 @@ export class PacketReader {
 
     readArray<T>(readFunction: () => T): T[] {
         const count = this.readVarInt()
-        const result: T[] = []
+        const result: T[] = new Array(count)
         for (let i = 0; i < count; i++) {
-            result.push(readFunction())
+            result[i] = readFunction()
         }
         return result
     }
 
     readArrayComplex<T>(readObject: (packet: PacketReader) => T): T[] {
         const count = this.readVarInt()
-        const result: T[] = []
+        const result: T[] = new Array(count)
         for (let i = 0; i < count; i++) {
-            result.push(readObject(this))
+            result[i] = readObject(this)
         }
         return result
     }
@@ -204,15 +204,17 @@ export class PacketWriter {
 
     writeArray<T>(array: T[], writeFunction: (input: T) => PacketWriter) {
         this.writeVarInt(array.length)
-        array.forEach(value => {
-            writeFunction(value)
-        })
+        for (const item of array) {
+            writeFunction(item)
+        }
         return this
     }
 
     writeArrayComplex<T>(array: T[], writeObject: (writer: PacketWriter, value: T) => void) {
         this.writeVarInt(array.length)
-        array.forEach(value => writeObject(this, value))
+        for (const item of array) {
+            writeObject(this, item)
+        }
         return this
     }
 
@@ -312,9 +314,7 @@ export class PacketWriter {
     }
 
     writeUUID(uuid: string) {
-        const buf = parse(uuid)
-        buf.copy(this.buffer, (this.offset += 16) - 16)
-        return this
+        return this.write(parse(uuid))
     }
 
     writeNBT(value: nbt.NBT, format?: nbt.NBTFormat) {
