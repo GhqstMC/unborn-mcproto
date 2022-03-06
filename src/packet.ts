@@ -210,10 +210,10 @@ export class PacketWriter {
         return this
     }
 
-    writeArrayComplex<T>(array: T[], writeObject: (writer: PacketWriter, value: T) => void) {
+    writeArrayComplex<T>(array: T[], writeObject: (value: T, writer: PacketWriter) => void) {
         this.writeVarInt(array.length)
         for (const item of array) {
-            writeObject(this, item)
+            writeObject(item, this)
         }
         return this
     }
