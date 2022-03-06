@@ -1,6 +1,6 @@
 {
   "name": "unborn-mcproto",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "A small Minecraft protocol implementation designed for proxies. Forked from mcproto.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
