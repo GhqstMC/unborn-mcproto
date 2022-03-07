@@ -194,6 +194,11 @@ export class PacketWriter {
         return this
     }
 
+    slice(start: number, end: number) {
+        this.buffer = this.buffer.slice(start, end)
+        return this
+    }
+
     writeOptional<T>(value: T | undefined, writeFunction: (input: T) => PacketWriter) {
         this.writeBool(value !== undefined)
         if (value !== undefined) {
