@@ -14,9 +14,9 @@ export async function joinSession(accessToken: string, selectedProfile: string, 
                     accessToken, selectedProfile, serverId
                 })
             },
-            FetchResultTypes.JSON
+            FetchResultTypes.Result
         )
-        return true
+        return responseData.status === 204
     } catch(e) {
         return false
     }
@@ -24,9 +24,9 @@ export async function joinSession(accessToken: string, selectedProfile: string, 
 
 export async function hasJoinedSession(username: string, serverId: string, ip?: string) {
     try {
-        const data = await fetch("https://sessionserver.mojang.com/session/minecraft/hasJoined?"
-        + querystring.stringify({ username, serverId }), FetchResultTypes.JSON)
-        return true
+        const responseData = await fetch("https://sessionserver.mojang.com/session/minecraft/hasJoined?"
+        + querystring.stringify({ username, serverId }), FetchResultTypes.Result)
+        return responseData.status === 204
     } catch(e) {
         return false
     }
