@@ -37,7 +37,9 @@ export class Emitter<Events extends { [key in string]: any }> {
     emit<T extends keyof Events>(event: T, ...args: Args<Events[T]>) {
         const handlers = this.handlers.get(event)
         if (!handlers || handlers.size == 0) return false;
-        [...handlers].forEach(cb => cb(...args))
+        for (const cb of handlers) {
+            cb(...args)
+        }
         return true
     }
 }
