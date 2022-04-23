@@ -92,16 +92,16 @@ export class Connection extends Emitter<Events> {
 
     nextPacket(id?: number, expectNext = true): Promise<PacketReader> {
         return new Promise((resolve, reject) => {
-            const endL = this.on("end", () => (reject(new Error("Server closed")), listener.dispose()))
+            // const endL = this.on("end", () => (reject(new Error("Server closed")), listener.dispose()))
             const listener = this.on("packet", packet => {
                 if (id == null || packet.id == id) {
                     resolve(packet)
                     listener.dispose()
-                    endL.dispose()
+                    // endL.dispose()
                 } else if (expectNext && id != null && packet.id != id) {
                     reject(new Error(`Expected packet with id ${id} but got ${packet.id}`))
                     listener.dispose()
-                    endL.dispose()
+                    // endL.dispose()
                 }
             })
         })
@@ -125,8 +125,15 @@ export class Connection extends Emitter<Events> {
         }
 
         return new Promise<void>((resolve, reject) => this.writer.write(buffer, error => {
-            if (error) reject(error)
-            else resolve()
+            if (error) {
+                if (error.message !== 'write after end') {
+                    reject(error)
+                } else {
+                    resolve()
+                }
+            } else {
+                resolve()
+            }
         }))
     }
 
