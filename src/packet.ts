@@ -1,8 +1,8 @@
 import { writeVarInt, decodeVarInt, decodeVarLong, writeVarLong } from "./varint"
-import * as nbt from "prismarine-nbt"
 import { stringify, parse } from "uuid-1345"
 import * as zlib from "zlib"
 import { promisify } from "util"
+import * as nbt from "nbt-ts"
 
 const gzip = promisify(zlib.gzip)
 const gunzip = promisify(zlib.gunzip)
@@ -139,36 +139,10 @@ export class PacketReader {
         return stringify(this.buffer.slice(this.offset, (this.offset += 16)))
     }
 
-    readNBT() {
-        const data = nbt.proto.read(this.buffer, this.offset, 'nbt')
-        this.offset += nbt.proto.sizeOf(data, 'nbt')
-        return data
-    }
-
-    readCompressedNBT() {
-        const length = this.readInt16()
-        if (length === -1) return null
-
-        const compressedNbt = this.buffer.slice(this.offset, this.offset + length)
-
-        this.offset += length
-
-        const nbtBuffer = zlib.gunzipSync(compressedNbt)
-
-        return nbt.parseUncompressed(nbtBuffer)
-    }
-
-    async readCompressedNBTAsync() {
-        const length = this.readInt16()
-        if (length === -1) return null
-
-        const compressedNbt = this.buffer.slice(this.offset, this.offset + length)
-
-        this.offset += length
-
-        const nbtBuffer = await gunzip(compressedNbt)
-
-        return nbt.parseUncompressed(nbtBuffer)
+    readNBT(options?: nbt.DecodeOptions) {
+        const tag = nbt.decode(this.buffer.slice(this.offset), options)
+        this.offset += tag.length
+        return tag
     }
 }
 
@@ -311,7 +285,11 @@ export class PacketWriter {
     writePosition(x: number, y: number, z: number): PacketWriter
     writePosition(pos: Position): PacketWriter
     writePosition(x: number | Position, y?: number, z?: number) {
-        if (x instanceof Object) y = x.y, z = x.z, x = x.x
+        if (typeof x === 'object') {
+            y = x.y
+            z = x.z
+            x = x.x
+        }
         return this.writeUInt64(this.protocol < 440
             ? (BigInt(x & 0x3ffffff) << 38n) | (BigInt(y! & 0xfff) << 26n) | BigInt(z! & 0x3ffffff)
             : (BigInt(x & 0x3ffffff) << 38n) | (BigInt(z! & 0x3ffffff) << 12n) | BigInt(y! & 0xfff)
@@ -322,34 +300,8 @@ export class PacketWriter {
         return this.write(parse(uuid))
     }
 
-    writeNBT(value: nbt.NBT, format?: nbt.NBTFormat) {
-        return this.write(nbt.writeUncompressed(value, format))
-    }
-
-    writeCompressedNBT(value: nbt.NBT, format?: nbt.NBTFormat, defined: boolean = true) {
-        if (!defined) return this.writeInt16(-1)
-
-        const buf = nbt.writeUncompressed(value, format)
-
-        const compressedNbt = zlib.gzipSync(buf)
-        compressedNbt.writeUInt8(0, 9)
-
-        this.writeInt16(compressedNbt.length)
-        compressedNbt.copy(this.buffer, (this.offset += compressedNbt.length) - compressedNbt.length)
-        return this
-    }
-
-    async writeCompressedNBTAsync(value: nbt.NBT, format?: nbt.NBTFormat, defined: boolean = true) {
-        if (!defined) return this.writeInt16(-1)
-
-        const buf = nbt.writeUncompressed(value, format)
-
-        const compressedNbt = await gzip(buf)
-        compressedNbt.writeUInt8(0, 9)
-
-        this.writeInt16(compressedNbt.length)
-        compressedNbt.copy(this.buffer, (this.offset += compressedNbt.length) - compressedNbt.length)
-        return this
+    writeNBT(name: string | null, tag: nbt.Tag | null) {
+        return this.write(nbt.encode(name, tag))
     }
 
     encode() {
